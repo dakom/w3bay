@@ -25,6 +25,7 @@ impl Route {
 
         let route = match paths {
             [""] => Self::Landing,
+            ["/"] => Self::Landing,
             ["merchant", section] => {
                 let section = match *section {
                     "products" => MerchantSection::Products,
