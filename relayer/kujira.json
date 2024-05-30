@@ -1,0 +1,17 @@
+
+{
+    "type": "cosmos",
+    "value": {
+      "key": "default",
+      "chain-id": "harpoon-4",
+      "rpc-addr": "https://kujira-testnet-rpc.polkachu.com:443",
+      "account-prefix": "kujira",
+      "keyring-backend": "test",
+      "gas-adjustment": 2.0,
+      "gas-prices": "0.034ukuji",
+      "debug": true,
+      "timeout": "20s",
+      "output-format": "json",
+      "sign-mode": "direct"
+    }
+  }

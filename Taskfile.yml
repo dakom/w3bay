@@ -1,0 +1,128 @@
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  RELAYER_PATH_PREFIX: "w3bay-demo"
+
+tasks:
+  frontend-dev:
+    deps: [localmedia-dev, frontend-dev-nomedia]
+
+  frontend-dev-nomedia:
+    dir: ./frontend
+    env: 
+      RUSTFLAGS: --cfg=web_sys_unstable_apis 
+    cmds:
+      - trunk serve --features dev --watch . --watch ../packages/shared
+
+  localmedia-dev:
+    dir: ./MEDIA/frontend
+    cmds: 
+      - http-server --gzip --cors -p 9000
+
+
+  contracts-build-native: 
+    dir: packages
+    cmds:
+      - sh ./native-build.sh
+
+  contracts-build-arm:
+    dir: packages
+    cmds:
+      - docker run --rm --tty
+        -u "$(id -u)":"$(id -g)"
+        -v "{{.USER_WORKING_DIR}}":/code
+        -v "{{.USER_WORKING_DIR}}/wasm/target":/target
+        -v "{{.USER_WORKING_DIR}}/wasm/artifacts":/code/artifacts
+        -v "{{.USER_WORKING_DIR}}/wasm/registry":/usr/local/cargo/registry
+        -v "{{.USER_WORKING_DIR}}/wasm/git":/usr/local/cargo/git
+        cosmwasm/workspace-optimizer:0.15.0
+
+      # not sure how this was created since we mapped the tool's /code/artifacts
+      # but it's empty (the real artifacts are in wasm/artifacts)
+      - rm -rf ./artifacts
+
+  contracts-build-arm:
+    dir: packages
+    cmds:
+      - docker run --rm --tty
+        -u "$(id -u)":"$(id -g)"
+        -v "{{.USER_WORKING_DIR}}":/code
+        -v "{{.USER_WORKING_DIR}}/wasm/target":/target
+        -v "{{.USER_WORKING_DIR}}/wasm/artifacts":/code/artifacts
+        -v "{{.USER_WORKING_DIR}}/wasm/registry":/usr/local/cargo/registry
+        -v "{{.USER_WORKING_DIR}}/wasm/git":/usr/local/cargo/git
+        cosmwasm/workspace-optimizer-arm64:0.15.0
+
+      # not sure how this was created since we mapped the tool's /code/artifacts
+      # but it's empty (the real artifacts are in wasm/artifacts)
+      - rm -rf ./artifacts
+
+  # Will also build
+  contracts-deploy:
+    dir: deployer
+    cmds:
+      - task: contracts-build-native
+      - task: contracts-deploy-built
+
+  # Just to deploy without building at all
+  contracts-deploy-built:
+    dir: deployer
+    cmds:
+      - npm run deploy
+
+  relayer-add-chains:
+    dir: relayer
+    cmds:
+      - rly chains add --file ./neutron.json neutron-testnet
+      - rly chains add --file ./stargaze.json stargaze-testnet
+      - rly chains add --file ./kujira.json kujira-testnet
+
+  relayer-add-wallet:
+    cmds:
+      - rly keys restore neutron-testnet default "{{.COSMOS_SEED_PHRASE}}"
+      - rly keys restore stargaze-testnet default "{{.COSMOS_SEED_PHRASE}}"
+      - rly keys restore kujira-testnet default "{{.COSMOS_SEED_PHRASE}}"
+
+  relayer-check-wallet:
+    cmds:
+      - rly q balance neutron-testnet
+      - rly q balance stargaze-testnet
+      - rly q balance kujira-testnet
+  
+  relayer-create-paths:
+    cmds:
+      - rly paths new harpoon-4 pion-1 {{.RELAYER_PATH_PREFIX}}-kujira-neutron
+      - rly paths new pion-1 elgafar-1 {{.RELAYER_PATH_PREFIX}}-neutron-stargaze
+  
+  relayer-create-clients:
+    cmds:
+      - rly transact client kujira-testnet neutron-testnet {{.RELAYER_PATH_PREFIX}}-kujira-neutron --override
+      - rly transact client neutron-testnet stargaze-testnet {{.RELAYER_PATH_PREFIX}}-neutron-stargaze --override
+  
+  relayer-create-connections:
+    cmds:
+      - rly transact connection {{.RELAYER_PATH_PREFIX}}-kujira-neutron --override
+      - rly transact connection {{.RELAYER_PATH_PREFIX}}-neutron-stargaze --override
+
+  relayer-create-channels:
+    vars:
+        WAREHOUSE_IBC_PORT:
+          sh: jq -r '.warehouse.ibcPort' deploy.json
+        PAYMENT_IBC_PORT:
+          sh: jq -r '.payment.ibcPort' deploy.json
+        NFT_IBC_PORT:
+          sh: jq -r '.nft.ibcPort' deploy.json
+        # This must match the version in the different contracts ibc.rs, but no need to edit it
+        WAREHOUSE_PAYMENT_IBC_CHANNEL_VERSION: "warehouse-payment-001"
+        WAREHOUSE_NFT_IBC_CHANNEL_VERSION: "warehouse-nft-001"
+    cmds: 
+      - rly transact channel {{.RELAYER_PATH_PREFIX}}-kujira-neutron --src-port {{.PAYMENT_IBC_PORT}} --dst-port {{.WAREHOUSE_IBC_PORT}} --order unordered --version {{.WAREHOUSE_PAYMENT_IBC_CHANNEL_VERSION}} --debug --override
+      - rly transact channel {{.RELAYER_PATH_PREFIX}}-neutron-stargaze --src-port {{.WAREHOUSE_IBC_PORT}} --dst-port {{.NFT_IBC_PORT}} --order unordered --version {{.WAREHOUSE_NFT_IBC_CHANNEL_VERSION}} --debug --override
+  
+  relayer-start:
+    cmds:
+      - rly start
+      # - rly start {{.RELAYER_PATH_PREFIX}}-kujira-neutron
+      # - rly start {{.RELAYER_PATH_PREFIX}}-neutron-stargaze
