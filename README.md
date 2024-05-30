@@ -10,7 +10,7 @@ Overall, consumers get better prices, and merchants benefit with consistent marg
 
 # Developers
 
-* Auto-generated Rustdoc for all contract messages, including IBC and events (from the `shared` package)
+* [Auto-generated Rustdoc](https://dakom.github.io/w3bay/doc/shared/) for all shared types, contract messages, including IBC and events (from the `shared` package)
 * Fullstack Rust, types are shared between contracts and frontend (even getting strongly typed events with From/Into impls!)
 * Taskfile with simple commands to make development a breeze
 * Shared config, one file to configure the network, one auto-generated file to maintain contract addresses, ibc ports, etc.

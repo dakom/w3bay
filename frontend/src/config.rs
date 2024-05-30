@@ -42,7 +42,7 @@ cfg_if::cfg_if! {
     } else {
         pub static CONFIG: Lazy<Config> = Lazy::new(|| {
             Config {
-                root_path: "",
+                root_path: "w3bay",
                 media_root: "/media",
                 default_lang: None,
                 auto_connect: false,
