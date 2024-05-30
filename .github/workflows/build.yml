@@ -35,23 +35,23 @@ jobs:
     - name: build for release 
       env:
           RUSTFLAGS: --cfg=web_sys_unstable_apis
-      run: trunk build --release
+      run: cd frontend && trunk build --release
 
     - name: patch the index files 
-      run: node ./github-deploy-patch.js
+      run: cd frontend && node ./github-deploy-patch.js
 
     - name: cargo doc
       run: cd packages/shared && cargo doc --no-deps
 
     - name: copy cargo doc 
-      run: cp -R ./target/doc ./dist/doc
+      run: cp -R ./target/doc ./frontend/dist/doc
 
     - name: copy required media files
-      run: cp -R ./MEDIA/frontend ./dist/media
+      run: cp -R ./MEDIA/frontend ./frontend/dist/media
 
     - uses: actions/upload-pages-artifact@v1
       with:
-        path: ./dist
+        path: ./frontend/dist
 
   # Deploy job
   deploy:

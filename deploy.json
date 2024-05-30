@@ -3,21 +3,21 @@
     "name": "warehouse",
     "hash": "7581d164f9074c07606b31ec6e9f43d2846a10bc1b76866221621290c4d5c604",
     "codeId": 4982,
-    "address": "neutron1f2nlegw29wc2vfzd73sjdz07wvl6d5wzs5d3la7y6l2958y9uw7slvnaul",
-    "ibcPort": "wasm.neutron1f2nlegw29wc2vfzd73sjdz07wvl6d5wzs5d3la7y6l2958y9uw7slvnaul"
+    "address": "neutron1sxa66kw0dnxxca2ew9q94n62as7g7vlddy2kh56t8dmywe384clqtxcf6u",
+    "ibcPort": "wasm.neutron1sxa66kw0dnxxca2ew9q94n62as7g7vlddy2kh56t8dmywe384clqtxcf6u"
   },
   "payment": {
     "name": "payment",
     "hash": "12fa71d0f973b4e656488d841e4a418b5a3df9d74ffdb8790144bf7ce08775cc",
     "codeId": 3535,
-    "address": "kujira1u6vu797229mq4hj0ymdyw3p8wj94cfgclw72f0p5ugpg8fcrkhqswa4zex",
-    "ibcPort": "wasm.kujira1u6vu797229mq4hj0ymdyw3p8wj94cfgclw72f0p5ugpg8fcrkhqswa4zex"
+    "address": "kujira13xfvvlua2zsa3xx6wdgudu2twvqd8c8xp4fcu54xl4d4wnjjvq7slc298r",
+    "ibcPort": "wasm.kujira13xfvvlua2zsa3xx6wdgudu2twvqd8c8xp4fcu54xl4d4wnjjvq7slc298r"
   },
   "nft": {
     "name": "nft",
     "hash": "b4e99b0440bc6eb7025ee99895cac905bc0d36b88a70870171c757af077b371b",
     "codeId": 4202,
-    "address": "stars1xppmluwam6k0nmqjlv2q3uh2yhqdynz8040m7szdg95v39nmamgqcqnjmk",
-    "ibcPort": "wasm.stars1xppmluwam6k0nmqjlv2q3uh2yhqdynz8040m7szdg95v39nmamgqcqnjmk"
+    "address": "stars1nc0f8gjuna2w3f8k7uq6n4ff2ccukfdcmuesg36xpe56gt8h7kuq2qhxe7",
+    "ibcPort": "wasm.stars1nc0f8gjuna2w3f8k7uq6n4ff2ccukfdcmuesg36xpe56gt8h7kuq2qhxe7"
   }
 }
