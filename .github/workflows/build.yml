@@ -35,7 +35,7 @@ jobs:
       run: rustup target add wasm32-unknown-unknown
 
     - name: install trunk
-      run: wget -qO- https://github.com/thedodd/trunk/releases/download/v0.17.5/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+      run: wget -qO- https://github.com/thedodd/trunk/releases/download/v0.20.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
 
     - name: build for release 
       run: task frontend-build 
