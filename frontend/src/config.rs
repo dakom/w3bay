@@ -43,7 +43,7 @@ cfg_if::cfg_if! {
         pub static CONFIG: Lazy<Config> = Lazy::new(|| {
             Config {
                 root_path: "w3bay",
-                media_root: "/media",
+                media_root: "https://dakom.github.io/w3bay/media",
                 default_lang: None,
                 auto_connect: false,
                 start_route: Mutex::new(None),
