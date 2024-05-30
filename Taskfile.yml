@@ -14,7 +14,7 @@ tasks:
     env: 
       RUSTFLAGS: --cfg=web_sys_unstable_apis 
     cmds:
-      - trunk build --release
+      - trunk build --release --public-url=https://dakom.github.io/w3bay/
 
   frontend-dev-nomedia:
     dir: ./frontend

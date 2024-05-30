@@ -8,7 +8,7 @@ const path = require("path");
 (async () => {
     const ROOTS = ["css", "media"];
 
-    const uri_root = "e3bay"
+    const uri_root = "w3bay"
 
 
     let data = await readAsync("./dist/index.html");
