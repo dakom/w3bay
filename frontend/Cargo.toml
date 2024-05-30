@@ -65,5 +65,5 @@ features = [
     "Storage",
 ]
 [features]
-default = []
+default = ["dev"]
 dev = ["wasm-logger", "console_error_panic_hook","awsm_web/unwrap_verbose"]
