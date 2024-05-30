@@ -18,8 +18,9 @@ impl Route {
         let paths = paths
             .split('/')
             .into_iter()
+            .skip(if CONFIG.root_path.is_empty() { 1 } else { 2 })
             // skip all the roots (1 for the domain, 1 for each part of root path)
-            .skip(root_path.chars().filter(|c| *c == '/').count() + 1)
+            //.skip(root_path.chars().filter(|c| *c == '/').count() + 1)
             .collect::<Vec<_>>();
         let paths = paths.as_slice();
 
