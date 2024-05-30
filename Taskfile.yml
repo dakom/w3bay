@@ -9,6 +9,13 @@ tasks:
   frontend-dev:
     deps: [localmedia-dev, frontend-dev-nomedia]
 
+  frontend-build:
+    dir: ./frontend
+    env: 
+      RUSTFLAGS: --cfg=web_sys_unstable_apis 
+    cmds:
+      - trunk build --release
+
   frontend-dev-nomedia:
     dir: ./frontend
     env: 

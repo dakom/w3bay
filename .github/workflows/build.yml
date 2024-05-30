@@ -18,6 +18,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-lint-
 
+    - name: Setup go-task
+      uses: pnorton5432/setup-task@v1
+      with:
+        task-version: 3.36.0
+
     - name: add root workspace to path
       run: echo "${{github.workspace}}" >> $GITHUB_PATH
 
@@ -33,9 +38,7 @@ jobs:
       run: wget -qO- https://github.com/thedodd/trunk/releases/download/v0.17.5/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
 
     - name: build for release 
-      env:
-          RUSTFLAGS: --cfg=web_sys_unstable_apis
-      run: cd frontend && trunk build --release
+      run: task frontend-build 
 
     - name: patch the index files 
       run: cd frontend && node ./github-deploy-patch.js
