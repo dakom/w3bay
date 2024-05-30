@@ -34,7 +34,7 @@ impl Sidebar {
 
 pub struct SidebarItem {
     text: String,
-    route: Route,
+    route: Option<Route>,
     hovering: Mutable<bool>,
 }
 
@@ -51,7 +51,7 @@ impl SidebarItem {
 
         let my_route = self.route.clone();
         let selected_signal = || Route::signal().map(clone!(my_route => move |current_route| {
-            current_route == my_route
+            Some(current_route) == my_route
         }));
 
         let hovering_selected_signal = map_ref! {
@@ -79,18 +79,20 @@ impl SidebarItem {
                 }
             }))
             //.style("background-color", ColorSemantic::Warning.to_str())
-            .apply(set_on_hover(&self.hovering))
+            .apply_if(my_route.is_some(), set_on_hover(&self.hovering))
             .text(&self.text)
             .event(clone!(my_route => move |_: events::Click| {
-                my_route.go_to_url();
+                if let Some(my_route) = my_route.as_ref() {
+                    my_route.go_to_url();
+                }
             }))
         })
     }
 
 }
 
-impl From<(&str, Route)> for SidebarItem {
-    fn from((text, route): (&str, Route)) -> Self {
+impl From<(&str, Option<Route>)> for SidebarItem {
+    fn from((text, route): (&str, Option<Route>)) -> Self {
         Self {
             text: text.to_string(),
             route,

@@ -1,6 +1,8 @@
+use futures::StreamExt;
+use gloo_timers::future::IntervalStream;
 use products::ProductsPage;
 
-use crate::{atoms::{buttons::Squareish1Button, sidebar::Sidebar}, config::CONFIG, prelude::*, route::Route};
+use crate::{atoms::{balance::Balance, buttons::Squareish1Button, sidebar::Sidebar}, config::CONFIG, prelude::*, route::Route};
 
 mod products;
 
@@ -11,7 +13,6 @@ pub struct MerchantPage {
 pub enum MerchantSection {
     Products,
     Shipments,
-    Sales
 }
 
 impl MerchantPage {
@@ -20,6 +21,7 @@ impl MerchantPage {
     }
 
     pub fn render(self: &Arc<Self>) -> Dom {
+        let balance = Mutable::new(0.0);
         static CONTAINER:Lazy<String> = Lazy::new(|| {
             class! {
                 .style("display", "grid")
@@ -29,16 +31,14 @@ impl MerchantPage {
         html!("div", {
             .class(&*CONTAINER)
             .child(Sidebar::new([
-                ("<-- Back", Route::Landing),
-                ("Products", Route::Merchant(MerchantSection::Products)),
-                ("Shipments", Route::Merchant(MerchantSection::Shipments)),
-                ("Sales", Route::Merchant(MerchantSection::Sales)),
+                ("<-- Back", Some(Route::Landing)),
+                ("Products", Some(Route::Merchant(MerchantSection::Products))),
+                ("Shipments", Some(Route::Merchant(MerchantSection::Shipments))),
             ]).render())
             .child(html!("div", {
                 .child(html!("div", {
                     .style("margin-left", "2rem")
-                    .class(&*TEXT_SIZE_XLG)
-                    .text("Merchant")
+                    .child(Balance::new("Merchant".to_string()).render())
                 }))
                 .child(html!("div", {
                     .style("padding", "2rem")

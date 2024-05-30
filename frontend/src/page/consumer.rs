@@ -4,7 +4,7 @@ mod purchases;
 use products::ProductsPage;
 use purchases::PurchasesPage;
 
-use crate::{atoms::{buttons::Squareish1Button, sidebar::Sidebar}, config::CONFIG, prelude::*, route::Route};
+use crate::{atoms::{balance::Balance, buttons::Squareish1Button, sidebar::Sidebar}, config::CONFIG, prelude::*, route::Route};
 
 pub struct ConsumerPage {
 }
@@ -30,15 +30,14 @@ impl ConsumerPage {
         html!("div", {
             .class(&*CONTAINER)
             .child(Sidebar::new([
-                ("<-- Back", Route::Landing),
-                ("Products", Route::Consumer(ConsumerSection::Products)),
-                ("Purchases", Route::Consumer(ConsumerSection::Purchases)),
+                ("<-- Back", Some(Route::Landing)),
+                ("Products", Some(Route::Consumer(ConsumerSection::Products))),
+                ("Purchases", Some(Route::Consumer(ConsumerSection::Purchases))),
             ]).render())
             .child(html!("div", {
                 .child(html!("div", {
                     .style("margin-left", "2rem")
-                    .class(&*TEXT_SIZE_XLG)
-                    .text("Consumer")
+                    .child(Balance::new("Consumer".to_string()).render())
                 }))
                 .child(html!("div", {
                     .style("padding", "2rem")

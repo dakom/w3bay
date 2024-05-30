@@ -26,7 +26,6 @@ impl Route {
                 let section = match *section {
                     "products" => MerchantSection::Products,
                     "shipments" => MerchantSection::Shipments,
-                    "sales" => MerchantSection::Sales,
                     _ => return Self::NotFound,
                 };
                 Self::Merchant(section)
@@ -81,7 +80,6 @@ impl std::fmt::Display for Route {
             Route::Merchant(section) => match section {
                 MerchantSection::Products => "merchant/products".to_string(),
                 MerchantSection::Shipments => "merchant/shipments".to_string(),
-                MerchantSection::Sales => "merchant/sales".to_string()
             },
             Route::Consumer(section) => match section {
                 ConsumerSection::Products => "consumer/products".to_string(),
