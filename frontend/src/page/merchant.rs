@@ -1,10 +1,12 @@
 use futures::StreamExt;
 use gloo_timers::future::IntervalStream;
 use products::ProductsPage;
+use shipments::ShipmentsPage;
 
 use crate::{atoms::{balance::Balance, buttons::Squareish1Button, sidebar::Sidebar}, config::CONFIG, prelude::*, route::Route};
 
 mod products;
+mod shipments;
 
 pub struct MerchantPage {
 }
@@ -45,6 +47,7 @@ impl MerchantPage {
                     .child_signal(Route::signal().map(|route| {
                         match route {
                             Route::Merchant(MerchantSection::Products) => Some(ProductsPage::new().render()),
+                            Route::Merchant(MerchantSection::Shipments) => Some(ShipmentsPage::new().render()),
                             _ => None
                         }
                     }))
