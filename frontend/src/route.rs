@@ -10,6 +10,9 @@ pub enum Route {
 
 impl Route {
     pub fn from_url(url: &str, root_path: &str) -> Self {
+
+        log::info!("url: {}, root_path: {}", url, root_path);
+
         let url = web_sys::Url::new(url).unwrap();
         let paths = url.pathname();
         let paths = paths
@@ -40,6 +43,7 @@ impl Route {
             },
             _ => Self::NotFound,
         };
+        log::info!("route: {:?}", route);
 
         match route {
             Self::Landing | Self::NotFound => route,
