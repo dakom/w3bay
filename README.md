@@ -8,6 +8,8 @@ Think Ebay, Aliexpress, etc. but using Web3 tech to make smart contract driven g
 
 Overall, consumers get better prices, and merchants benefit with consistent margins.
 
+[LIVE FRONTEND](https://dakom.github.io/w3bay/) (requires a running relayer!)
+
 # Developers
 
 * [Auto-generated Rustdoc](https://dakom.github.io/w3bay/doc/shared/) for all shared types, contract messages, including IBC and events (from the `shared` package)
