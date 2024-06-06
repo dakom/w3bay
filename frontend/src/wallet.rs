@@ -297,7 +297,8 @@ pub struct TxResp {
     #[serde(rename = "transactionHash")]
     pub hash: String,
     // will always be 1 deep since we only send one message at a time
-    pub logs: Vec<Logs>,
+    pub logs: Option<Vec<Logs>>,
+    pub events: Option<Vec<Event>>
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -309,12 +310,22 @@ pub struct Logs {
 
 impl CosmosResponseExt for TxResp {
     fn events(&self) -> Box<dyn Iterator<Item = Event> + 'static> {
-        Box::new(
-            self.logs
-                .clone()
-                .into_iter()
-                .map(|log| log.events.into_iter())
-                .flatten(),
-        )
+        if let Some(logs) = &self.logs {
+            if logs.len() > 1 {
+                return Box::new(
+                    logs
+                        .clone()
+                        .into_iter()
+                        .map(|log| log.events.into_iter())
+                        .flatten(),
+                )
+            }
+        }
+
+        if let Some(events) = &self.events {
+            Box::new(events.clone().into_iter())
+        } else {
+            Box::new(Vec::<Event>::new().into_iter())
+        }
     }
 }

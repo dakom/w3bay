@@ -1,3 +1,5 @@
+use core::panic;
+
 use awsm_web::env::{self, env_var};
 use cosmwasm_std::Addr;
 use once_cell::sync::Lazy;
@@ -19,13 +21,17 @@ impl Environment {
     }
 }
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "chainlocal")] {
-        pub static CHAINENV: Environment = Environment::Local;
-    } else {
-        pub static CHAINENV: Environment = Environment::Testnet;
+impl From<std::option::Option<&str>> for Environment {
+    fn from(s: Option<&str>) -> Self {
+        match s {
+            Some("local") => Environment::Local,
+            Some("testnet") => Environment::Testnet,
+            _ => panic!("invalid CHAINENV, set env var to 'local' or 'testnet'"),
+        }
     }
 }
+
+pub static CHAINENV: Lazy<Environment> = Lazy::new(|| option_env!("CHAINENV").into());
 
 #[derive(Debug)]
 pub struct Config {
@@ -58,8 +64,8 @@ cfg_if::cfg_if! {
                 root_path: "",
                 media_root: "http://localhost:9000",
                 default_lang: None,
-                //auto_connect: true,
-                auto_connect: false,
+                auto_connect: true,
+                //auto_connect: false,
                 start_route: Mutex::new(Some(Route::Merchant(MerchantSection::Shipments))),
                 //start_route: Mutex::new(None),
                 query_poll_delay_ms: 3000,
@@ -145,7 +151,7 @@ pub enum ContractName {
 
 impl ContractName {
     fn deploy_config(&self) -> DeployContactConfig {
-        let env = CHAINENV;
+        let env = *CHAINENV;
         match self {
             ContractName::Warehouse => match env {
                 Environment::Local => DEPLOY_CONFIG.warehouse_local.clone(),

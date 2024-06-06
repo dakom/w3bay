@@ -12,34 +12,28 @@ tasks:
 
   ##### FRONTEND #####
 
-  frontend-dev-local:
-    deps: [localmedia-dev, frontend-dev-nomedia-local]
-
-  frontend-dev-testnet:
-    deps: [localmedia-dev, frontend-dev-nomedia-testnet]
+  frontend-dev:
+    deps: [internal-localmedia-dev, internal-frontend-dev-nomedia]
 
   frontend-build:
     dir: ./frontend
     env: 
       RUSTFLAGS: --cfg=web_sys_unstable_apis 
+      CHAINENV: "testnet"
     cmds:
       - trunk build --release --public-url=https://dakom.github.io/w3bay/
 
-  frontend-dev-nomedia-local:
+  internal-frontend-dev-nomedia:
+    internal: true
     dir: ./frontend
     env: 
       RUSTFLAGS: --cfg=web_sys_unstable_apis
-    cmds:
-      - trunk serve --features dev,chainlocal --watch . --watch ../packages/shared
-
-  frontend-dev-nomedia-testnet:
-    dir: ./frontend
-    env: 
-      RUSTFLAGS: --cfg=web_sys_unstable_apis
+      CHAINENV: "local"
     cmds:
       - trunk serve --features dev --watch . --watch ../packages/shared
 
-  localmedia-dev:
+  internal-localmedia-dev:
+    internal: true
     dir: ./MEDIA/frontend
     cmds: 
       - http-server --gzip --cors -p 9000

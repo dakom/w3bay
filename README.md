@@ -32,33 +32,39 @@ Overall, consumers get better prices, and merchants benefit with consistent marg
 
 ### Setup
 
+#### Local chains
+
+You'll need to create the chains once with `task create-chains`
+
+Then you can start and stop the local chains as-needed with `task start-chains` / `task stop-chains`
+
+Debugging individual chains by shell can be done via `task sh-chain-[neutron|kujira|stargaze]`. The config is in a subdirectory of `./data`
+
+
 #### Easy Mode
-Easy mode: if you already have all the depenencies, wallet setup, etc., then it's as easy as:
 
-1. (local-only) `task create-chains`
-2. (local-only) `task start-chains`
-3. `task contracts-deploy-[local|testnet]`
-4. `task relayer-setup-[local|testnet]`
+If you already have all the depenencies, wallet setup, etc., then it's as easy as:
 
-That's all for easy-mode one-time setup, then, to get a live working environment
+1. `task contracts-deploy-[local|testnet]`
+2. `task relayer-setup-[local|testnet]`
 
-1. (if chains aren't already started): `task start-chains`
-2. (start the relayer in its own terminal) `task relayer-start-[local|testnet]`
-3. (start the frontend in its own terminal) `task frontend-dev-[local|testnet]`
+That's all for initial setup, then, to get a live working environment
 
-As contracts change, you'll then want to
+1. `task relayer-start-[local|testnet]` (in its own terminal) 
+2. `task frontend-dev-[local|testnet]` (in its own terminal) 
 
-1. shut down the relayer and frontend (kill the terminals)
+As contracts change and you want to redeploy:
+
+1. shut down the "live working environment" (kill the terminals) 
 2. `task contracts-deploy-[local|testnet]`
 3. `task relayer-create-channels-[local|testnet]`
-4. (start the relayer in its own terminal) `task relayer-start-[local|testnet]`
-5. (start the frontend in its own terminal) `task frontend-dev-[local|testnet]`
+4. Restart the "live working environment" as above
 
-chains can be shutdown at any time via `task stop-chains`
+Theoretically, migrations would not require new channels or stopping/starting the live environment, however this isn't currently supported, as of right now every change must be re-deployed to get the full user experience.
 
 #### Detailed Mode
 
-Add the appropriate `-local` or `-testnet` suffix to the commands here, they're ommited for the sake of brevity
+Step-by-step instructions to allow for debugging individual commands etc.
 
 1. (one-time) make sure you have all the testnets installed available in Keplr
    - Neutron: https://neutron.celat.one/pion-1 and hit "connect wallet"
@@ -70,27 +76,27 @@ Add the appropriate `-local` or `-testnet` suffix to the commands here, they're 
    - Kujira: via the #public-testnet-faucet channel on Discord
    - Stargaze: https://violetboralee.medium.com/stargaze-network-how-to-add-stargaze-testnet-to-keplr-cosmostation-leap-and-get-test-stars-5a6ae2ca494f
       - May need to manually add the #faucet channel
-3. (one-time) edit .env.example to add your seed phrase (needed for deploying contracts, and running the relayer, not as a regular user), and rename to .env
+3. (one-time) edit .env.example to add your seed phrases (needed for deploying contracts, local chains, running the relayer, not as a regular user), and rename to .env
 4. (one-time) setup the relayer
    - Install the Go relayer: https://github.com/cosmos/relayer
    - Initialize the Go relayer: `rly config init`
-   - Configure the chains: `task relayer-add-chains`
-   - Configure the wallet: `task relayer-add-wallet`
-   - Make sure the wallet has funds: `task relayer-check-wallet`
+   - Configure the chains: `task relayer-add-chains-[local|testnet]`
+   - Configure the wallet: `task relayer-add-wallet-[local|testnet]`
+   - Make sure the wallet has funds: `task relayer-check-wallet-[local|testnet]`
       - each chain should have non-zero balance
-   - Create paths: `task relayer-create-paths`
-   - Create clients: `task relayer-create-clients`
-   - Create connections: `task relayer-create-connections`
+   - Create paths: `task relayer-create-paths-[local|testnet]`
+   - Create clients: `task relayer-create-clients-[local|testnet]`
+   - Create connections: `task relayer-create-connections-[local|testnet]`
    - Create channels: gotcha! don't do that yet :) it will read the deploy file to get the ibc ports, so we do that after deploying contracts
 5. (one-time) Install npm dependencies
    - in `deployer`, run `npm install`
 6. (one-time and hacking) build and deploy contracts
-   - `task contracts-deploy`
-   - `task relayer-create-channels`
+   - `task contracts-deploy-[local|testnet]`
+   - `task relayer-create-channels-[local|testnet]`
 7. (one-time and hacking) run the frontend locally
-   - `task frontend-dev` (in its own terminal)
+   - `task frontend-dev-[local|testnet]` (in its own terminal)
 8. (one-time and hacking) start relaying
-   - `task relayer-start` (in its own terminal)
+   - `task relayer-start-[local|testnet]` (in its own terminal)
 
 The order in all the above is somewhat important, but once you're off to the races, different parts can be iterated (e.g. redeploying contracts and recreating ibc channels)
 

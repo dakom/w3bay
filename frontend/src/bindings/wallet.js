@@ -114,11 +114,11 @@ export async function ffi_contract_query(wallet, contractAddress, msg) {
 
 export async function ffi_contract_exec(wallet, contractAddress, msg) {
     const resp = await wallet.client.execute(wallet.address, contractAddress, msg, "auto", "");
+    console.log("executed contract", resp);
     return resp;
 } 
 
 export async function ffi_contract_exec_funds(wallet, contractAddress, msg, funds) {
-    console.log("executing contract with funds", contractAddress, msg, funds);
     try {
         const resp = await wallet.client.execute(wallet.address, contractAddress, msg, "auto", "", funds);
         console.log("executed contract", resp);
