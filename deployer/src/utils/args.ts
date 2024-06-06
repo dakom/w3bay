@@ -1,4 +1,4 @@
-import { Environment } from "src/config";
+import { Action, Environment } from "src/config";
 
 export function getArg(key:string) {
     for (const arg of process.argv) {
@@ -19,5 +19,16 @@ export function getEnvironment():Environment {
     }
 
     throw new Error("Please specify an environment with --CHAINENV=[testnet|local]");
+
+}
+
+export function getAction():Action {
+    const action = getArg("ACTION");
+
+    if (action === "deploy" || action === "migrate") {
+        return action;
+    }
+
+    throw new Error("Please specify an action with --ACTION=[deploy|migrate]");
 
 }

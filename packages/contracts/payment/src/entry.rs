@@ -52,6 +52,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<QueryResponse> {
     }
 }
 
+#[entry_point]
+pub fn migrate(deps: DepsMut, env: Env, msg: Empty) -> Result<Response> {
+    let (state, mut ctx) = StateContext::new(deps, env)?;
+
+    Ok(ctx.response.into_response())
+}
+
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
 #[entry_point]
 pub fn ibc_channel_open(

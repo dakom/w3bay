@@ -103,11 +103,11 @@ impl State<'_> {
                     .collect::<Result<Vec<GroupInfo>, _>>()?
             },
             None => {
-                GROUP_PURCHASES 
-                    .prefix_range(store, start_after.map(|start_after| PrefixBound::exclusive(start_after)), None, cosmwasm_std::Order::Ascending)
+                GROUP_OWNER
+                    .keys(store, start_after.map(|start_after| Bound::exclusive(start_after)), None, cosmwasm_std::Order::Ascending)
                     .take(limit.unwrap_or(u32::MAX) as usize)
                     .map(|group_id| {
-                        let group_id = group_id?.0.0;
+                        let group_id = group_id?;
                         self.get_group_info(store, group_id)
                     })
                     .collect::<Result<Vec<GroupInfo>, _>>()?

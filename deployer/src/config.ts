@@ -15,6 +15,7 @@ export const WASM_ARTIFACTS_PATH = "../wasm/artifacts";
 export type Target = "neutron" | "stargaze" | "kujira";
 export type ContractName = "warehouse" | "payment" | "nft"
 export type Environment = "testnet" | "local"
+export type Action = "deploy" | "migrate"
 
 export interface NetworkConfig {
     target: Target;

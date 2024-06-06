@@ -12,8 +12,10 @@ tasks:
 
   ##### FRONTEND #####
 
-  frontend-dev:
-    deps: [internal-localmedia-dev, internal-frontend-dev-nomedia]
+  frontend-dev-*:
+    vars:
+      TARGET: "{{index .MATCH 0}}"
+    deps: [internal-localmedia-dev, "internal-frontend-dev-nomedia-{{.TARGET}}"]
 
   frontend-build:
     dir: ./frontend
@@ -23,12 +25,14 @@ tasks:
     cmds:
       - trunk build --release --public-url=https://dakom.github.io/w3bay/
 
-  internal-frontend-dev-nomedia:
+  internal-frontend-dev-nomedia-*:
     internal: true
     dir: ./frontend
+    vars:
+      TARGET: "{{index .MATCH 0}}"
     env: 
       RUSTFLAGS: --cfg=web_sys_unstable_apis
-      CHAINENV: "local"
+      CHAINENV: "{{.TARGET}}"
     cmds:
       - trunk serve --features dev --watch . --watch ../packages/shared
 
@@ -77,28 +81,35 @@ tasks:
       # but it's empty (the real artifacts are in wasm/artifacts)
       - rm -rf ./artifacts
 
-  contracts-deploy-testnet:
+  contracts-deploy-*:
     dir: deployer
+    vars:
+      TARGET: "{{index .MATCH 0}}"
     cmds:
       - task: contracts-build-native
-      - task: contracts-deploy-built-testnet
+      - task: contracts-only-deploy-{{.TARGET}}
 
-  contracts-deploy-local:
+  contracts-only-deploy-*:
     dir: deployer
+    vars:
+      TARGET: "{{index .MATCH 0}}"
+    cmds:
+      - npm run deploy-{{.TARGET}}
+
+  contracts-migrate-*:
+    dir: deployer
+    vars:
+      TARGET: "{{index .MATCH 0}}"
     cmds:
       - task: contracts-build-native
-      - task: contracts-deploy-built-local
+      - task: contracts-only-migrate-{{.TARGET}}
 
-  # Just to deploy without building at all
-  contracts-deploy-built-testnet:
+  contracts-only-migrate-*:
     dir: deployer
+    vars:
+      TARGET: "{{index .MATCH 0}}"
     cmds:
-      - npm run deploy-testnet
-
-  contracts-deploy-built-local:
-    dir: deployer
-    cmds:
-      - npm run deploy-local
+      - npm run migrate-{{.TARGET}}
 
   ##### RELAYER #####
   # All commands use `-testnet` or `-local`

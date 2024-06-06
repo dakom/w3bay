@@ -2,7 +2,7 @@ import { ContractName, Environment, ONLY_IF_NEW } from "./config";
 import { getEnvironment } from "./utils/args";
 import { Wallet } from "./utils/wallet";
 
-export async function deploy() {
+export async function migrate() {
     const env = getEnvironment();
 
     const neutronWallet = await Wallet.create("neutron", env);
@@ -14,20 +14,13 @@ export async function deploy() {
     const stargazeWallet = await Wallet.create("stargaze", env);
     console.log(`Stargaze wallet address: ${stargazeWallet.address}, balance: ${await stargazeWallet.balance()}`);
 
-    await deployContract(neutronWallet, "warehouse");
-    await deployContract(kujiraWallet, "payment");
-    await deployContract(stargazeWallet, "nft");
+    await migrateContract(neutronWallet, "warehouse");
+    await migrateContract(kujiraWallet, "payment");
+    await migrateContract(stargazeWallet, "nft");
 }
 
-async function deployContract(wallet: Wallet, name: ContractName) {
+async function migrateContract(wallet: Wallet, name: ContractName) {
     console.log(``);
-    const {isNew} = await wallet.uploadContract(name, "deploy");
-    if(isNew || !ONLY_IF_NEW) {
-        await wallet.instantiateContract(name, {
-        });
-
-        await wallet.setIbcPort(name);
-    } else {
-        console.log(`${name} contract already uploaded, not deploying again`)
-    }
+    const {hashHex, codeId} = await wallet.uploadContract(name, "migrate");
+    await wallet.migrateContract(name, codeId, hashHex, { });
 }

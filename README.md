@@ -53,14 +53,14 @@ That's all for initial setup, then, to get a live working environment
 1. `task relayer-start-[local|testnet]` (in its own terminal) 
 2. `task frontend-dev-[local|testnet]` (in its own terminal) 
 
-As contracts change and you want to redeploy:
+As contracts change and you want to migrate, just `task contracts-migrate-[local|testnet]` and hard reload the frontend
+
+If you need a full redeployment (new addresses, wipe the state, etc.):
 
 1. shut down the "live working environment" (kill the terminals) 
 2. `task contracts-deploy-[local|testnet]`
 3. `task relayer-create-channels-[local|testnet]`
 4. Restart the "live working environment" as above
-
-Theoretically, migrations would not require new channels or stopping/starting the live environment, however this isn't currently supported, as of right now every change must be re-deployed to get the full user experience.
 
 #### Detailed Mode
 
@@ -91,7 +91,7 @@ Step-by-step instructions to allow for debugging individual commands etc.
 5. (one-time) Install npm dependencies
    - in `deployer`, run `npm install`
 6. (one-time and hacking) build and deploy contracts
-   - `task contracts-deploy-[local|testnet]`
+   - `task contracts-deploy-[local|testnet]` (this will use `native` build mode... to avoid this, see subcommands in Taskfile)
    - `task relayer-create-channels-[local|testnet]`
 7. (one-time and hacking) run the frontend locally
    - `task frontend-dev-[local|testnet]` (in its own terminal)
@@ -144,6 +144,7 @@ Those UMD scripts are from:
 
 * Contracts are built via `task contracts-build`. For the sake of faster build times, `task contracts-build-native` can be run to avoid docker, but it requires all the tools be available (e.g. binaryen / wasm-opt)
 
-* Contracts are deployed via `task contracts-deploy-built`. For the sake of convenience, `task contracts-deploy-[local|testnet]` will build _and_ deploy in one step
+* Contracts are deployed via `task contracts-only-deploy`. However, the typical way is `task contracts-deploy-[local|testnet]` will build _and_ deploy in one step, using native build mode (not docker). Same thing goes for migrations (just substitute "migrate" for "deploy").
+
 
 There is no automated testing setup at the moment, but it would be trivial to add. Testing is currently done gamedev style, by playtesting ;)

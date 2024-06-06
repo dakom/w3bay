@@ -1,8 +1,10 @@
 {
   "name": "deployer",
   "scripts": {
-    "deploy-testnet": "ts-node ./src/index.ts --CHAINENV=testnet",
-    "deploy-local": "ts-node ./src/index.ts --CHAINENV=local"
+    "deploy-testnet": "ts-node ./src/index.ts --CHAINENV=testnet --ACTION=deploy",
+    "deploy-local": "ts-node ./src/index.ts --CHAINENV=local --ACTION=deploy",
+    "migrate-testnet": "ts-node ./src/index.ts --CHAINENV=testnet --ACTION=migrate",
+    "migrate-local": "ts-node ./src/index.ts --CHAINENV=local --ACTION=migrate"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.32.3",

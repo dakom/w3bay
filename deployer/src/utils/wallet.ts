@@ -56,7 +56,7 @@ export class Wallet {
             throw new Error("Contract needs to be uploaded before it can be instantiated!");
         }
 
-        const instantiateReceipt = await this.client.instantiate(
+        const result = await this.client.instantiate(
             this.address,
             deployConfig.codeId,
             instantiate_msg,
@@ -67,18 +67,44 @@ export class Wallet {
             }
         )
 
-        const { contractAddress } = instantiateReceipt
+        const { contractAddress } = result;
         if(!contractAddress || contractAddress === "") {
             throw new Error("Failed to instantiate contract");
         }
 
         console.log("instantiated", name, "at", contractAddress);
 
-
-
         deployConfig.address = contractAddress;
         await writeDeployConfig(name, this.env, deployConfig);
     }
+
+    public async migrateContract(name: ContractName, codeId: number, hashHex: string, migrate_msg: any) {
+        const {address} = await getDeployConfig(name, this.env);
+
+
+        if(!address) {
+            throw new Error("Contract needs to have a pre-existing address before it can be migrated!");
+        }
+
+        await this.client.migrate(
+            this.address,
+            address,
+            codeId,
+            migrate_msg,
+            "auto",
+        )
+
+        const deployConfig = await getDeployConfig(name, this.env);
+        deployConfig.hash = hashHex;
+        deployConfig.codeId = codeId;
+
+        await writeDeployConfig(name, this.env, deployConfig); 
+
+        console.log("migrated", name, "at", deployConfig.address);
+    }
+
+
+//migrate(senderAddress: string, contractAddress: string, codeId: number, migrateMsg: JsonObject, fee: StdFee | "auto" | number, memo?: string): Promise<MigrateResult>;
 
     public async setIbcPort(name: ContractName) {
         const deployConfig = await getDeployConfig(name, this.env);
@@ -102,7 +128,7 @@ export class Wallet {
     }
 
     // returns true if it uploaded a new code id, otherwise false
-    public async uploadContract(name: ContractName):Promise<boolean> {
+    public async uploadContract(name: ContractName, kind: "migrate" | "deploy"):Promise<{codeId: number, isNew: boolean, hashHex: string}> {
         const data = await fs.readFile(getContractPath(name));
         const hashBuffer = await crypto.subtle.digest("SHA-256", data)
         const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
@@ -111,7 +137,9 @@ export class Wallet {
             .join(""); // convert bytes to hex string
 
         const deployConfig = await getDeployConfig(name, this.env);
-        if(deployConfig.hash && deployConfig.codeId && deployConfig.hash === hashHex) {
+        if(kind === "migrate") {
+            console.log(`Contract ${name} needs a migration, uploading...`);
+        } else if(deployConfig.hash && deployConfig.codeId && deployConfig.hash === hashHex) {
             try {
                 const contractDetails = await this.client.getCodeDetails(deployConfig.codeId);
                 if(contractDetails.id === deployConfig.codeId) {
@@ -119,7 +147,7 @@ export class Wallet {
                 } else {
                     throw new Error("Code ID does not match");
                 }
-                return false;
+                return {codeId: deployConfig.codeId, isNew: false, hashHex};
             } catch(e) {
                 console.log(`Contract ${name} codeId is nonexistant or changed, uploading...`);
             }
@@ -137,12 +165,14 @@ export class Wallet {
 
         console.log(`Contract uploaded with code ID ${codeId}`);
 
-        deployConfig.hash = hashHex;
-        deployConfig.codeId = codeId;
+        if(kind === "deploy") {
+            deployConfig.hash = hashHex;
+            deployConfig.codeId = codeId;
 
-        await writeDeployConfig(name, this.env, deployConfig); 
+            await writeDeployConfig(name, this.env, deployConfig); 
+        }
 
-        return true;
+        return {codeId, isNew: true, hashHex};
     }
 
 

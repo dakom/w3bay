@@ -150,8 +150,8 @@ async fn load_groups() -> Result<Vec<GroupInfo>> {
     let mut groups:Vec<GroupInfo> = vec![];
     loop {
         let res:Result<Vec<GroupInfo>> = Wallet::neutron().contract_query(ContractName::Warehouse, &WarehouseQueryMsg::ListGroups {
-            //owner: Some(Wallet::neutron().address().to_string()),
-            owner: None,
+            owner: Some(Wallet::neutron().address().to_string()),
+            //owner: None,
             limit: None,
             start_after,
         }).await;
