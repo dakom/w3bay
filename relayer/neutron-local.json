@@ -1,0 +1,16 @@
+{
+    "type": "cosmos",
+    "value": {
+      "key": "default",
+      "chain-id": "local-neutron",
+      "rpc-addr": "http://localhost:16657",
+      "account-prefix": "wasm",
+      "keyring-backend": "test",
+      "gas-adjustment": 1.5,
+      "gas-prices": "0.025untrn",
+      "debug": true,
+      "timeout": "20s",
+      "output-format": "json",
+      "sign-mode": "direct"
+    }
+  }

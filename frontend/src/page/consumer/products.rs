@@ -3,7 +3,7 @@ use cosmwasm_std::Coin;
 use dominator_helpers::futures::AsyncLoader;
 use shared::{msg::{contract::{payment::InfoResp, warehouse::{event::AddProductEvent, NewProduct, QueryMsg}}, product::{Product, ProductId}}, tx::CosmosResponseExt};
 
-use crate::{atoms::{buttons::Squareish1Button, input::{TextInput, TextInputKind}}, config::{ContractName, NETWORK_CONFIG}, prelude::*};
+use crate::{atoms::{buttons::Squareish1Button, input::{TextInput, TextInputKind}}, config::{ContractName, NetworkConfig, NETWORK_CONFIG}, prelude::*};
 
 pub struct ProductsPage {
     pub list: Arc<ListProducts>,
@@ -153,7 +153,7 @@ impl ProductCard {
                                 quantity,
                             },
                             &[Coin {
-                                denom: NETWORK_CONFIG.kujira.denom.clone(),
+                                denom: Wallet::kujira().denom().clone(),
                                 amount: amount.to_uint_ceil().to_string().parse().unwrap_ext()
                             }]
                         ).await.unwrap_throw();

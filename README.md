@@ -32,6 +32,34 @@ Overall, consumers get better prices, and merchants benefit with consistent marg
 
 ### Setup
 
+#### Easy Mode
+Easy mode: if you already have all the depenencies, wallet setup, etc., then it's as easy as:
+
+1. (local-only) `task create-chains`
+2. (local-only) `task start-chains`
+3. `task contracts-deploy-[local|testnet]`
+4. `task relayer-setup-[local|testnet]`
+
+That's all for easy-mode one-time setup, then, to get a live working environment
+
+1. (if chains aren't already started): `task start-chains`
+2. (start the relayer in its own terminal) `task relayer-start-[local|testnet]`
+3. (start the frontend in its own terminal) `task frontend-dev-[local|testnet]`
+
+As contracts change, you'll then want to
+
+1. shut down the relayer and frontend (kill the terminals)
+2. `task contracts-deploy-[local|testnet]`
+3. `task relayer-create-channels-[local|testnet]`
+4. (start the relayer in its own terminal) `task relayer-start-[local|testnet]`
+5. (start the frontend in its own terminal) `task frontend-dev-[local|testnet]`
+
+chains can be shutdown at any time via `task stop-chains`
+
+#### Detailed Mode
+
+Add the appropriate `-local` or `-testnet` suffix to the commands here, they're ommited for the sake of brevity
+
 1. (one-time) make sure you have all the testnets installed available in Keplr
    - Neutron: https://neutron.celat.one/pion-1 and hit "connect wallet"
    - Kujira: https://github.com/SynergyNodes/Add-Kujira-Testnet-to-Keplr (maybe use Polkachu RPC nodes instead, as in the network.json file here)
@@ -110,6 +138,6 @@ Those UMD scripts are from:
 
 * Contracts are built via `task contracts-build`. For the sake of faster build times, `task contracts-build-native` can be run to avoid docker, but it requires all the tools be available (e.g. binaryen / wasm-opt)
 
-* Contracts are deployed via `task contracts-deploy-built`. For the sake of convenience, `task contracts-deploy` will build _and_ deploy in one step
+* Contracts are deployed via `task contracts-deploy-built`. For the sake of convenience, `task contracts-deploy-[local|testnet]` will build _and_ deploy in one step
 
 There is no automated testing setup at the moment, but it would be trivial to add. Testing is currently done gamedev style, by playtesting ;)

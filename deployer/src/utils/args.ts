@@ -1,3 +1,5 @@
+import { Environment } from "src/config";
+
 export function getArg(key:string) {
     for (const arg of process.argv) {
         if (arg.startsWith(`--${key}=`)) {
@@ -7,4 +9,15 @@ export function getArg(key:string) {
     }
 
     return null; 
+}
+
+export function getEnvironment():Environment {
+    const env = getArg("CHAINENV");
+
+    if (env === "testnet" || env === "local") {
+        return env;
+    }
+
+    throw new Error("Please specify an environment with --CHAINENV=[testnet|local]");
+
 }

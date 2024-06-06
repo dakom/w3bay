@@ -67,6 +67,7 @@ impl Landing {
             Init,
             Connecting,
             NoKeplr,
+            InstallingKeplr,
         }
 
         let phase = Mutable::new(Phase::Init);
@@ -87,6 +88,10 @@ impl Landing {
                         },
                         Phase::NoKeplr => {
                             // could call ffi_install_keplr...
+                        }
+                        Phase::InstallingKeplr => {
+                            Wallet::install_keplr().await;
+                            phase.set(Phase::Init);
                         }
                     }
                 })
@@ -111,8 +116,26 @@ impl Landing {
                     },
                     Phase::NoKeplr => {
                         html!("div", {
+                            .style("display", "flex")
+                            .style("flex-direction", "column")
+                            .style("gap", "1rem")
+                            .style("align-items", "center")
+
+                            .child(html!("div", {
+                                .class(&*TEXT_SIZE_LG)
+                                .text("Unable to connect")
+                            }))
+                            .child(Squareish1Button::new()
+                                .render("install chain for Keplr".to_string(), clone!(phase => move || {
+                                    phase.set_neq(Phase::InstallingKeplr);
+                                }))
+                            )
+                        })
+                    },
+                    Phase::InstallingKeplr => {
+                        html!("div", {
                             .class(&*TEXT_SIZE_LG)
-                            .text("Unable to connect, install Keplr")
+                            .text("Installing Keplr...")
                         })
                     },
                 })

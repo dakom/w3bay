@@ -6,12 +6,12 @@ import {
     StdFee
 } from "@cosmjs/stargate"
 import { Coin, DirectSecp256k1HdWallet, Registry } from "@cosmjs/proto-signing"
-import { ContractName, NetworkConfig, Target, getContractPath, getDeployConfig, getNetworkConfig, getSeedPhrase, writeDeployConfig } from "../config";
+import { ContractName, Environment, NetworkConfig, Target, getContractPath, getDeployConfig, getNetworkConfig, getSeedPhrase, writeDeployConfig } from "../config";
 
 export class Wallet {
-    public static async create(target: Target):Promise<Wallet> {
+    public static async create(target: Target, env: Environment):Promise<Wallet> {
 
-        const networkConfig = await getNetworkConfig(target);
+        const networkConfig = await getNetworkConfig(env === "testnet" ? `${target}_testnet`: `${target}_local`);
 
         const {addr_prefix, rpc_url, gas_price, denom} = networkConfig;
 
@@ -40,7 +40,7 @@ export class Wallet {
             console.warn(`Account ${address} needs funds for executions`);
         }
 
-        return new Wallet(signer, client, address, networkConfig);
+        return new Wallet(env, signer, client, address, networkConfig);
     }
 
     public async balance():Promise<number> {
@@ -50,7 +50,7 @@ export class Wallet {
 
 
     public async instantiateContract(name: ContractName, instantiate_msg: any) {
-        const deployConfig = await getDeployConfig(name);
+        const deployConfig = await getDeployConfig(name, this.env);
 
         if(!deployConfig.codeId) {
             throw new Error("Contract needs to be uploaded before it can be instantiated!");
@@ -77,11 +77,11 @@ export class Wallet {
 
 
         deployConfig.address = contractAddress;
-        await writeDeployConfig(name, deployConfig);
+        await writeDeployConfig(name, this.env, deployConfig);
     }
 
     public async setIbcPort(name: ContractName) {
-        const deployConfig = await getDeployConfig(name);
+        const deployConfig = await getDeployConfig(name, this.env);
 
         if(!deployConfig.address) {
             throw new Error("Contract needs to be instantiated before it get the ibc port!");
@@ -98,7 +98,7 @@ export class Wallet {
 
 
 
-        await writeDeployConfig(name, deployConfig);
+        await writeDeployConfig(name, this.env, deployConfig);
     }
 
     // returns true if it uploaded a new code id, otherwise false
@@ -109,12 +109,20 @@ export class Wallet {
         const hashHex = hashArray
             .map((b) => b.toString(16).padStart(2, "0"))
             .join(""); // convert bytes to hex string
-        console.log(hashHex);
 
-        const deployConfig = await getDeployConfig(name);
-        if(deployConfig.hash === hashHex) {
-            console.log(`Contract ${name} already uploaded, code id is ${deployConfig.codeId}`);
-            return false;
+        const deployConfig = await getDeployConfig(name, this.env);
+        if(deployConfig.hash && deployConfig.codeId && deployConfig.hash === hashHex) {
+            try {
+                const contractDetails = await this.client.getCodeDetails(deployConfig.codeId);
+                if(contractDetails.id === deployConfig.codeId) {
+                    console.log(`Contract ${name} already uploaded, code id is ${deployConfig.codeId}`);
+                } else {
+                    throw new Error("Code ID does not match");
+                }
+                return false;
+            } catch(e) {
+                console.log(`Contract ${name} codeId is nonexistant or changed, uploading...`);
+            }
         } else {
             console.log(`Contract ${name} has changed, uploading...`);
         }
@@ -132,7 +140,7 @@ export class Wallet {
         deployConfig.hash = hashHex;
         deployConfig.codeId = codeId;
 
-        await writeDeployConfig(name, deployConfig); 
+        await writeDeployConfig(name, this.env, deployConfig); 
 
         return true;
     }
@@ -150,6 +158,6 @@ export class Wallet {
         return await this.client.executeMultiple(this.address, instructions, fee, memo);
     }
 
-    private constructor(public readonly signer: DirectSecp256k1HdWallet, public readonly client: SigningCosmWasmClient, public readonly address: string, public readonly networkConfig: NetworkConfig) {
+    private constructor(public readonly env: Environment, public readonly signer: DirectSecp256k1HdWallet, public readonly client: SigningCosmWasmClient, public readonly address: string, public readonly networkConfig: NetworkConfig) {
     }
 }

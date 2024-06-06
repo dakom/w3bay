@@ -6,12 +6,15 @@ import { GasPrice } from "@cosmjs/stargate";
 
 dotenv.config({ path: path.resolve('../.env') });
 
+// only deploy contract if it is new (the whole process - upload, instantiate, set ibc port)
+export const ONLY_IF_NEW = false;
 export const NETWORK_PATH = "../network.json";
 export const DEPLOY_PATH = "../deploy.json";
 export const WASM_ARTIFACTS_PATH = "../wasm/artifacts";
 
 export type Target = "neutron" | "stargaze" | "kujira";
 export type ContractName = "warehouse" | "payment" | "nft"
+export type Environment = "testnet" | "local"
 
 export interface NetworkConfig {
     target: Target;
@@ -25,10 +28,9 @@ export interface NetworkConfig {
 }
 
 export function getSeedPhrase() {
-    return process.env.COSMOS_SEED_PHRASE as string;
+    return process.env.DEPLOYER_SEED_PHRASE as string;
 }
-export async function getNetworkConfig(target: Target):Promise<NetworkConfig> {
-    console.log(path.resolve(NETWORK_PATH));
+export async function getNetworkConfig(target: `${Target}_testnet`| `${Target}_local`):Promise<NetworkConfig> {
     const ALL_CONFIG = JSON.parse(await fs.readFile(path.resolve(NETWORK_PATH), "utf8"));
     const config = ALL_CONFIG[target];
     return { 
@@ -42,34 +44,19 @@ export function getContractPath(contractName: ContractName):string {
 }
 
 export interface DeployConfig {
-    name: ContractName;
     hash?: string
     codeId?: number
     address?: string
     ibcPort?: string
 }
-export async function getDeployConfig(contractName: ContractName):Promise<DeployConfig> {
+export async function getDeployConfig(contractName: ContractName, env: Environment):Promise<DeployConfig> {
     const ALL_CONFIG = JSON.parse(await fs.readFile(path.resolve(DEPLOY_PATH), "utf8"));
-    const config = ALL_CONFIG[contractName];
-    return {
-        name: contractName,
-        ...config
-    }
+    const config = ALL_CONFIG[`${contractName}_${env}`];
+    return config;
 }
 
-export async function writeDeployConfig(contractName: ContractName, config: DeployConfig) {
+export async function writeDeployConfig(contractName: ContractName, env: Environment, config: DeployConfig) {
     const ALL_CONFIG = JSON.parse(await fs.readFile(path.resolve(DEPLOY_PATH), "utf8"));
-    ALL_CONFIG[contractName] = config;
+    ALL_CONFIG[`${contractName}_${env}`] = config;
     await fs.writeFile(path.resolve(DEPLOY_PATH), JSON.stringify(ALL_CONFIG, null, 2));
-}
-
-export function getTarget():Target {
-    const target = getArg("target");
-
-    if (target === "neutron" || target === "stargaze" || target === "kujira") {
-        return target;
-    }
-
-    throw new Error("Please specify a target with --target=[neutron|stargaze|kujira]");
-
 }

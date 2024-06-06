@@ -1,4 +1,4 @@
-export function ffi_connect(networkConfig, onConnected, onError) {
+export function ffi_connect(networkConfig, chainEnv, onConnected, onError) {
 
     const connectSigning = async (config) => {
         const {
@@ -25,13 +25,13 @@ export function ffi_connect(networkConfig, onConnected, onError) {
             throw new Error(`gotta get some funds first!`);
         } else {
             const address = accounts[0].address;
-            return {signer: client.signer, address, client, config}
+            return {signer: client.signer, address, client, ...config}
         }
     }
 
     const connectQuerier = async (config) => {
         const client = await window.CosmWasmJS.createBatchQueryClient(config.rpc_url);
-        return {client, config};
+        return {client, ...config};
     }
 
     if (!window.keplr) {
@@ -39,9 +39,9 @@ export function ffi_connect(networkConfig, onConnected, onError) {
     } else {
         (async () => {
             try {
-                const neutron = await connectSigning(networkConfig.neutron);
-                const kujira = await connectSigning(networkConfig.kujira);
-                const stargaze = await connectSigning(networkConfig.stargaze);
+                const neutron = await connectSigning(chainEnv === "local" ? networkConfig.neutron_local : networkConfig.neutron_testnet);
+                const kujira = await connectSigning(chainEnv === "local" ? networkConfig.kujira_local : networkConfig.kujira_testnet);
+                const stargaze = await connectSigning(chainEnv === "local" ? networkConfig.stargaze_local : networkConfig.stargaze_testnet);
 
                 onConnected({
                     neutron: {
@@ -65,42 +65,47 @@ export function ffi_connect(networkConfig, onConnected, onError) {
     }
 }
 
-export function ffi_install_keplr(onInstalled) {
+export async function ffi_install_keplr(networkConfig, chainEnv) {
     if (!window.keplr) {
         alert("Please install keplr extension");
         return;
     }
-    const currency = {
-        coinDenom: CURRENT_FAMILY_CONFIG.denom,
-        coinMinimalDenom: CURRENT_FAMILY_CONFIG.denom,
-        coinDecimals: 6,
-        coinGeckoId: CURRENT_FAMILY_CONFIG.fullDenom,
+
+    async function installKeplr(config) {
+        const currency = {
+            coinDenom: config.denom,
+            coinMinimalDenom: config.denom,
+            coinDecimals: 6,
+            coinGeckoId: config.full_denom,
+        }
+
+        const keplrConfig = {
+            chainId:  config.chain_id,
+            chainName: config.chain_id,
+            rpc: config.rpc_url,
+            rest: config.rest_url, 
+            bip44: {
+                coinType: 118,
+            },
+            bech32Config: {
+                bech32PrefixAccAddr: config.addr_prefix,
+                bech32PrefixAccPub: `${config.addr_prefix}pub`,
+                bech32PrefixValAddr: `${config.addr_prefix}valoper`,
+                bech32PrefixValPub: `${config.addr_prefix}valoperpub`,
+                bech32PrefixConsAddr: `${config.addr_prefix}valcons`,
+                bech32PrefixConsPub: `${config.addr_prefix}valconspub`
+            },
+            currencies: [currency],
+            feeCurrencies: [currency],
+            stakeCurrency: currency,
+        }
+
+        await window.keplr.experimentalSuggestChain(keplrConfig)
     }
 
-    const keplrConfig = {
-        chainId:  CURRENT_FAMILY_CONFIG.chainId,
-        chainName: CURRENT_FAMILY_CONFIG.chainId,
-        rpc: CURRENT_FAMILY_CONFIG.rpcUrl,
-        rest: CURRENT_FAMILY_CONFIG.restUrl, 
-        bip44: {
-            coinType: 118,
-        },
-        bech32Config: {
-            bech32PrefixAccAddr: CURRENT_FAMILY_CONFIG.addressPrefix,
-            bech32PrefixAccPub: `${CURRENT_FAMILY_CONFIG.addressPrefix}pub`,
-            bech32PrefixValAddr: `${CURRENT_FAMILY_CONFIG.addressPrefix}valoper`,
-            bech32PrefixValPub: `${CURRENT_FAMILY_CONFIG.addressPrefix}valoperpub`,
-            bech32PrefixConsAddr: `${CURRENT_FAMILY_CONFIG.addressPrefix}valcons`,
-            bech32PrefixConsPub: `${CURRENT_FAMILY_CONFIG.addressPrefix}valconspub`
-        },
-        currencies: [currency],
-        feeCurrencies: [currency],
-        stakeCurrency: currency,
-    }
-
-    window.keplr.experimentalSuggestChain(keplrConfig)
-        .then(onInstalled)
-        .catch(console.error);
+    await installKeplr(chainEnv === "local" ? networkConfig.neutron_local : networkConfig.neutron_testnet);
+    await installKeplr(chainEnv === "local" ? networkConfig.kujira_local : networkConfig.kujira_testnet);
+    await installKeplr(chainEnv === "local" ? networkConfig.stargaze_local : networkConfig.stargaze_testnet);
 }
 
 export async function ffi_contract_query(wallet, contractAddress, msg) {
@@ -124,6 +129,6 @@ export async function ffi_contract_exec_funds(wallet, contractAddress, msg, fund
 } 
 
 export async function ffi_wallet_balance(wallet) {
-    const coin = await wallet.client.getBalance(wallet.address, wallet.config.denom);
+    const coin = await wallet.client.getBalance(wallet.address, wallet.denom);
     return Number(coin.amount)
 }

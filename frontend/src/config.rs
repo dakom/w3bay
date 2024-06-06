@@ -1,8 +1,31 @@
-use awsm_web::env::env_var;
+use awsm_web::env::{self, env_var};
 use cosmwasm_std::Addr;
 use once_cell::sync::Lazy;
 
 use crate::{page::{consumer::ConsumerSection, merchant::MerchantSection}, prelude::*, route::Route};
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Environment {
+    Local,
+    Testnet,
+}
+
+impl Environment {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Environment::Local => "local",
+            Environment::Testnet => "testnet",
+        }
+    }
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "chainlocal")] {
+        pub static CHAINENV: Environment = Environment::Local;
+    } else {
+        pub static CHAINENV: Environment = Environment::Testnet;
+    }
+}
 
 #[derive(Debug)]
 pub struct Config {
@@ -26,6 +49,8 @@ impl Config {
     }
 }
 
+
+
 cfg_if::cfg_if! {
     if #[cfg(feature = "dev")] {
         pub static CONFIG: Lazy<Config> = Lazy::new(|| {
@@ -33,9 +58,10 @@ cfg_if::cfg_if! {
                 root_path: "",
                 media_root: "http://localhost:9000",
                 default_lang: None,
-                auto_connect: true,
-                //start_route: Mutex::new(Some(Route::Consumer(ConsumerSection::Purchases))),
-                start_route: Mutex::new(None),
+                //auto_connect: true,
+                auto_connect: false,
+                start_route: Mutex::new(Some(Route::Merchant(MerchantSection::Shipments))),
+                //start_route: Mutex::new(None),
                 query_poll_delay_ms: 3000,
             }
         });
@@ -63,9 +89,12 @@ pub const DEPLOY_CONFIG: Lazy<DeployConfig> = Lazy::new(|| {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeployConfig {
-    pub warehouse: DeployContactConfig,
-    pub payment: DeployContactConfig,
-    pub nft: DeployContactConfig,
+    pub warehouse_testnet: DeployContactConfig,
+    pub payment_testnet: DeployContactConfig,
+    pub nft_testnet: DeployContactConfig,
+    pub warehouse_local: DeployContactConfig,
+    pub payment_local: DeployContactConfig,
+    pub nft_local: DeployContactConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -87,10 +116,14 @@ pub const NETWORK_CONFIG: Lazy<NetworkConfig> = Lazy::new(|| {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NetworkConfig {
-    pub neutron: NetworkChainConfig,
-    pub kujira: NetworkChainConfig,
-    pub stargaze: NetworkChainConfig,
+    pub neutron_testnet: NetworkChainConfig,
+    pub kujira_testnet: NetworkChainConfig,
+    pub stargaze_testnet: NetworkChainConfig,
+    pub neutron_local: NetworkChainConfig,
+    pub kujira_local: NetworkChainConfig,
+    pub stargaze_local: NetworkChainConfig,
 }
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NetworkChainConfig {
@@ -111,12 +144,26 @@ pub enum ContractName {
 }
 
 impl ContractName {
-    pub fn addr(&self) -> Addr {
+    fn deploy_config(&self) -> DeployContactConfig {
+        let env = CHAINENV;
         match self {
-            ContractName::Warehouse => Addr::unchecked(&DEPLOY_CONFIG.warehouse.address),
-            ContractName::Payment => Addr::unchecked(&DEPLOY_CONFIG.payment.address),
-            ContractName::Nft => Addr::unchecked(&DEPLOY_CONFIG.nft.address),
+            ContractName::Warehouse => match env {
+                Environment::Local => DEPLOY_CONFIG.warehouse_local.clone(),
+                Environment::Testnet => DEPLOY_CONFIG.warehouse_testnet.clone(),
+            },
+            ContractName::Payment => match env {
+                Environment::Local => DEPLOY_CONFIG.payment_local.clone(),
+                Environment::Testnet => DEPLOY_CONFIG.payment_testnet.clone(),
+            },
+            ContractName::Nft => match env {
+                Environment::Local => DEPLOY_CONFIG.nft_local.clone(),
+                Environment::Testnet => DEPLOY_CONFIG.nft_testnet.clone(),
+            },
         }
+    }
+
+    pub fn addr(&self) -> Addr {
+        Addr::unchecked(self.deploy_config().address)
     }
 }
 

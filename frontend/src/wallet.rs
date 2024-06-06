@@ -13,7 +13,7 @@ use wasm_bindgen::closure::Closure;
 use std::future::IntoFuture;
 use awsm_web::prelude::*;
 use anyhow::{anyhow, Result};
-use crate::config::{ContractName, DEPLOY_CONFIG, NETWORK_CONFIG};
+use crate::config::{ContractName, CHAINENV, DEPLOY_CONFIG, NETWORK_CONFIG};
 
 
 thread_local! {
@@ -56,6 +56,7 @@ impl Wallet
     
         ffi_connect(
             serde_wasm_bindgen::to_value(&*NETWORK_CONFIG).unwrap_ext(),
+            CHAINENV.as_str(),
             on_connect_signing.as_ref().unchecked_ref(),
             on_error_signing.as_ref().unchecked_ref(),
         );
@@ -89,6 +90,14 @@ impl Wallet
             },
             WalletResult::Failure => false
         }
+    }
+
+    pub async fn install_keplr() -> Result<(), JsValue> {
+        log::info!("installing keplr...");
+        ffi_install_keplr(
+            serde_wasm_bindgen::to_value(&*NETWORK_CONFIG).unwrap_ext(),
+            CHAINENV.as_str()
+        ).await.map(|_| ())
     }
 
 
@@ -154,6 +163,9 @@ extern "C" {
 
     #[wasm_bindgen(method, getter)]
     pub fn address(this: &WalletSigning) -> String;
+
+    #[wasm_bindgen(method, getter)]
+    pub fn denom(this: &WalletSigning) -> String;
 }
 
 impl WalletSigning {
@@ -204,11 +216,13 @@ impl WalletSigning {
 extern "C" {
     fn ffi_connect(
         network_config: JsValue,
+        chainenv: &str,
         on_connected: &js_sys::Function,
         on_error: &js_sys::Function,
     );
 
-    fn ffi_install_keplr(on_installed: &js_sys::Function);
+    #[wasm_bindgen(catch)]
+    async fn ffi_install_keplr(network_config: JsValue, chainenv: &str) -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(catch)]
     async fn ffi_contract_query(

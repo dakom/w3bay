@@ -156,6 +156,8 @@ async fn load_groups() -> Result<Vec<GroupInfo>> {
             start_after,
         }).await;
 
+        log::info!("res: {:#?}", res);
+
         match res {
             Ok(res) => match res.last().cloned() {
                 Some(last) => {
