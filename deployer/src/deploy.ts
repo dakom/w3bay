@@ -21,7 +21,7 @@ export async function deploy() {
 
 async function deployContract(wallet: Wallet, name: ContractName) {
     console.log(``);
-    const {isNew} = await wallet.uploadContract(name, "deploy");
+    const {isNew} = await wallet.uploadContract(name, "deploy-always" /*"deploy-if-new"*/);
     if(isNew || !ONLY_IF_NEW) {
         await wallet.instantiateContract(name, {
         });

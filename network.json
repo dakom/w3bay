@@ -15,10 +15,10 @@
       "full_denom": "NTRN",
       "denom": "untrn",
       "chain_id": "local-neutron",
-      "addr_prefix": "wasm",
-      "binary": "wasmd",
-      "docker_image": "cosmwasm/wasmd:latest",
-      "timeout": "1s"
+      "addr_prefix": "neutron",
+      "timeout": "1s",
+      "binary": "neutrond",
+      "chain_dir": "/opt/neutron/data/local-neutron"
     },
     "stargaze_testnet": {
       "rpc_url": "https://rpc.elgafar-1.stargaze-apis.com",
@@ -36,10 +36,10 @@
       "full_denom": "STARS",
       "denom": "ustars",
       "chain_id": "local-stargaze",
-      "addr_prefix": "wasm",
-      "binary": "wasmd",
-      "docker_image": "cosmwasm/wasmd:latest",
-      "timeout": "1s"
+      "addr_prefix": "stars",
+      "timeout": "1s",
+      "binary": "starsd",
+      "chain_dir": "/data/.starsd"
     },
     "kujira_testnet": {
       "rpc_url": "https://kujira-testnet-rpc.polkachu.com",
@@ -57,9 +57,9 @@
       "full_denom": "Kuji",
       "denom": "ukuji",
       "chain_id": "local-kujira",
-      "addr_prefix": "wasm",
-      "binary": "wasmd",
-      "docker_image": "cosmwasm/wasmd:latest",
-      "timeout": "1s"
+      "addr_prefix": "kujira",
+      "timeout": "1s",
+      "binary": "kujirad",
+      "chain_dir": "/root/.kujira"
     }
 }

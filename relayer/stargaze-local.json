@@ -4,7 +4,7 @@
       "key": "default",
       "chain-id": "local-stargaze",
       "rpc-addr": "http://localhost:26658",
-      "account-prefix": "wasm",
+      "account-prefix": "stars",
       "keyring-backend": "test",
       "gas-adjustment": 1.5,
       "gas-prices": "0.025ustars",

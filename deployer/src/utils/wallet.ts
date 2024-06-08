@@ -15,6 +15,8 @@ export class Wallet {
 
         const {addr_prefix, rpc_url, gas_price, denom} = networkConfig;
 
+        console.log(rpc_url);
+
 
         const signer = await DirectSecp256k1HdWallet.fromMnemonic(
             getSeedPhrase(), 
@@ -128,7 +130,7 @@ export class Wallet {
     }
 
     // returns true if it uploaded a new code id, otherwise false
-    public async uploadContract(name: ContractName, kind: "migrate" | "deploy"):Promise<{codeId: number, isNew: boolean, hashHex: string}> {
+    public async uploadContract(name: ContractName, kind: "migrate" | "deploy-if-new" | "deploy-always"):Promise<{codeId: number, isNew: boolean, hashHex: string}> {
         const data = await fs.readFile(getContractPath(name));
         const hashBuffer = await crypto.subtle.digest("SHA-256", data)
         const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
@@ -139,7 +141,7 @@ export class Wallet {
         const deployConfig = await getDeployConfig(name, this.env);
         if(kind === "migrate") {
             console.log(`Contract ${name} needs a migration, uploading...`);
-        } else if(deployConfig.hash && deployConfig.codeId && deployConfig.hash === hashHex) {
+        } else if(kind === "deploy-if-new" && deployConfig.hash && deployConfig.codeId && deployConfig.hash === hashHex) {
             try {
                 const contractDetails = await this.client.getCodeDetails(deployConfig.codeId);
                 if(contractDetails.id === deployConfig.codeId) {
@@ -152,7 +154,7 @@ export class Wallet {
                 console.log(`Contract ${name} codeId is nonexistant or changed, uploading...`);
             }
         } else {
-            console.log(`Contract ${name} has changed, uploading...`);
+            console.log(`Contract ${name} needs a fresh deploy, uploading...`);
         }
 
 
@@ -165,7 +167,7 @@ export class Wallet {
 
         console.log(`Contract uploaded with code ID ${codeId}`);
 
-        if(kind === "deploy") {
+        if(kind != "migrate") {
             deployConfig.hash = hashHex;
             deployConfig.codeId = codeId;
 

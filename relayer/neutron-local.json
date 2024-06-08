@@ -4,7 +4,7 @@
       "key": "default",
       "chain-id": "local-neutron",
       "rpc-addr": "http://localhost:16657",
-      "account-prefix": "wasm",
+      "account-prefix": "neutron",
       "keyring-backend": "test",
       "gas-adjustment": 1.5,
       "gas-prices": "0.025untrn",

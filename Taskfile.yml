@@ -132,9 +132,25 @@ tasks:
     # we assume the errors are because this setup part already exists
     ignore_error: true
     cmds: 
+      - task: relayer-delete-chains-{{.TARGET}}
       - task: relayer-add-chains-{{.TARGET}}
       - task: relayer-add-wallet-{{.TARGET}}
       - task: relayer-create-paths-{{.TARGET}}
+
+  relayer-delete-chains-*:
+    vars:
+      TARGET: "{{index .MATCH 0}}"
+      NEUTRON_CHAIN_ID:
+        sh: jq -r '.value["chain-id"]' neutron-{{.TARGET}}.json
+      KUJIRA_CHAIN_ID:
+        sh: jq -r '.value["chain-id"]' kujira-{{.TARGET}}.json
+      STARGAZE_CHAIN_ID:
+        sh: jq -r '.value["chain-id"]' stargaze-{{.TARGET}}.json
+    dir: relayer
+    cmds:
+      - rly chains delete neutron-{{.TARGET}} 
+      - rly chains delete kujira-{{.TARGET}} 
+      - rly chains delete stargaze-{{.TARGET}} 
 
   relayer-add-chains-*:
     vars:
@@ -232,28 +248,27 @@ tasks:
   delete-chains:
     deps: [delete-chain-neutron, delete-chain-kujira, delete-chain-stargaze]
 
+ ##### DOCKER CHAIN SETUP ##### 
   create-chain-*:
-    env: 
-      DOCKER_DEFAULT_PLATFORM: linux/amd64
     vars:
-      STAKE_DENOM: "ufajita" # doesn't matter for a single local node
       ID: "{{index .MATCH 0}}"
       CHAIN_ID:
         sh: jq -r '.{{.ID}}_local.chain_id' network.json
       FEE_DENOM:
         sh: jq -r '.{{.ID}}_local.denom' network.json
+      STAKE_DENOM: "{{.FEE_DENOM}}" 
       RPC_PORT:
         sh: jq -r '.{{.ID}}_local.rpc_url' network.json | sed -E 's/.*:([0-9]+).*/\1/' 
       REST_PORT:
         sh: jq -r '.{{.ID}}_local.rest_url' network.json | sed -E 's/.*:([0-9]+).*/\1/' 
       BINARY:
         sh: jq -r '.{{.ID}}_local.binary' network.json
-      DOCKER_IMAGE:
-        sh: jq -r '.{{.ID}}_local.docker_image' network.json
+      DOCKER_IMAGE: "local-{{.ID}}"
       TIMEOUT:
         sh: jq -r '.{{.ID}}_local.timeout' network.json
       VOLUME_NAME: "{{.CHAIN_ID}}_data"
-      CHAIN_DIR: "./data/{{.CHAIN_ID}}"
+      CHAIN_DIR:
+        sh: jq -r '.{{.ID}}_local.chain_dir' network.json
       CONFIG_FILE: "{{.CHAIN_DIR}}/config/config.toml"
       APP_FILE: "{{.CHAIN_DIR}}/config/app.toml"
       GENESIS_FILE: "{{.CHAIN_DIR}}/config/genesis.json"
@@ -261,14 +276,13 @@ tasks:
         denom
         mint_denom
         bond_denom
+      GENESIS_CMD: '{{ if eq .ID "neutron"}}{{else}}genesis {{end}}'
     cmds:
       - task: delete-chain-{{.ID}}
-        vars: { 
-          CHAIN_ID: "{{.CHAIN_ID}}" 
-        }
       - echo "Creating chain {{.CHAIN_ID}}"
       # create the docker instance
       - docker run -d --name {{.CHAIN_ID}} 
+        --entrypoint ""
         -p {{.RPC_PORT}}:26657 -p {{.REST_PORT}}:1317 
         --mount type=volume,source={{.VOLUME_NAME}},target=/root 
         "{{.DOCKER_IMAGE}}"
@@ -280,35 +294,50 @@ tasks:
       # https://github.com/osmosis-labs/localosmosis-archive/blob/main/README.md#pro-tip-speed-up-block-time
       #
       # initialize the chain
-      - docker exec {{.CHAIN_ID}} {{.BINARY}} init test --home "{{.CHAIN_DIR}}" --chain-id="{{.CHAIN_ID}}"
+      - |
+        docker exec {{.CHAIN_ID}} /bin/sh -c '
+        if [ "{{.ID}}" = "neutron" ]
+        then
+          export CHAINID="{{.CHAIN_ID}}"
+          export STAKEDENOM="{{.STAKE_DENOM}}"
+          cd /opt/neutron && make install-test-binary
+          bash /opt/neutron/network/init.sh
+          bash /opt/neutron/network/init-neutrond.sh
+        else
+          {{.BINARY}} init test --home "{{.CHAIN_DIR}}" --chain-id="{{.CHAIN_ID}}"
+        fi'
       # create accounts
       - docker exec {{.CHAIN_ID}} /bin/sh -c 'echo "{{.VALIDATOR_SEED_PHRASE}}" | {{.BINARY}} keys add validator --home "{{.CHAIN_DIR}}" --keyring-backend=test --recover'
-      - docker exec {{.CHAIN_ID}} {{.BINARY}} genesis add-genesis-account validator "100000000000000{{.STAKE_DENOM}},100000000000000{{.FEE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
+      - docker exec {{.CHAIN_ID}} {{.BINARY}} {{.GENESIS_CMD}}add-genesis-account validator "100000000000000{{.STAKE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
       - |
         docker exec {{.CHAIN_ID}} /bin/sh -c '
         if [ "{{.DEPLOYER_SEED_PHRASE}}" != "{{.VALIDATOR_SEED_PHRASE}}" ]
         then
           echo "{{.DEPLOYER_SEED_PHRASE}}" | {{.BINARY}} keys add deployer --home "{{.CHAIN_DIR}}" --keyring-backend=test --recover
-          {{.BINARY}} genesis add-genesis-account deployer "100000000000000{{.STAKE_DENOM}},100000000000000{{.FEE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
+          {{.BINARY}} {{.GENESIS_CMD}}add-genesis-account deployer "100000000000000{{.STAKE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
         fi'
       - |
         docker exec {{.CHAIN_ID}} /bin/sh -c '
         if [ "{{.RELAYER_SEED_PHRASE}}" != "{{.VALIDATOR_SEED_PHRASE}}" ] && [ "{{.RELAYER_SEED_PHRASE}}" != "{{.DEPLOYER_SEED_PHRASE}}" ]
         then
           echo "{{.RELAYER_SEED_PHRASE}}" | {{.BINARY}} keys add relayer --home "{{.CHAIN_DIR}}" --keyring-backend=test --recover
-          {{.BINARY}} genesis add-genesis-account relayer "100000000000000{{.STAKE_DENOM}},100000000000000{{.FEE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
+          {{.BINARY}} {{.GENESIS_CMD}}add-genesis-account relayer "100000000000000{{.STAKE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
         fi'
       - |
         docker exec {{.CHAIN_ID}} /bin/sh -c '
         if [ "{{.USER_SEED_PHRASE}}" != "{{.VALIDATOR_SEED_PHRASE}}" ] && [ "{{.USER_SEED_PHRASE}}" != "{{.DEPLOYER_SEED_PHRASE}}" ] && [ "{{.USER_SEED_PHRASE}}" != "{{.RELAYER_SEED_PHRASE}}" ]
         then
           echo "{{.USER_SEED_PHRASE}}" | {{.BINARY}} keys add user --home "{{.CHAIN_DIR}}" --keyring-backend=test --recover
-          {{.BINARY}} genesis add-genesis-account user "100000000000000{{.STAKE_DENOM}},100000000000000{{.FEE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
+          {{.BINARY}} {{.GENESIS_CMD}}add-genesis-account user "100000000000000{{.STAKE_DENOM}}" --home "{{.CHAIN_DIR}}" --keyring-backend=test
         fi'
-      # submit genesis validator tx
-      - docker exec {{.CHAIN_ID}} {{.BINARY}} genesis gentx validator "250000000{{.STAKE_DENOM}}" --chain-id="{{.CHAIN_ID}}" --keyring-backend=test --home "{{.CHAIN_DIR}}"
-      # collect genesis txs
-      - docker exec {{.CHAIN_ID}} {{.BINARY}} genesis collect-gentxs --home "{{.CHAIN_DIR}}"
+      # submit genesis validator tx if not on neutron
+      - |
+        docker exec {{.CHAIN_ID}} /bin/sh -c '
+        if [ "{{.ID}}" != "neutron" ]
+        then
+          {{.BINARY}} {{.GENESIS_CMD}}gentx validator "250000000{{.STAKE_DENOM}}" --chain-id="{{.CHAIN_ID}}" --keyring-backend=test --home "{{.CHAIN_DIR}}"
+          {{.BINARY}} {{.GENESIS_CMD}}collect-gentxs --home "{{.CHAIN_DIR}}"
+        fi'
       # set the block time to be fast 
       - docker exec {{.CHAIN_ID}} sed -E -i '/timeout_(propose|prevote|precommit|commit)/s/[0-9]+m?s/{{.TIMEOUT}}/' "{{.CONFIG_FILE}}"
       # set the minimum gas prices to 0
@@ -334,6 +363,7 @@ tasks:
       CHAIN_ID:
         sh: jq -r '.{{.ID}}_local.chain_id' network.json
       VOLUME_NAME: "{{.CHAIN_ID}}_data"
+      DOCKER_IMAGE: "local-{{.ID}}"
     # allow this command to fail
     ignore_error: true  
     cmds:
@@ -349,6 +379,7 @@ tasks:
       ID: "{{index .MATCH 0}}"
       CHAIN_ID:
         sh: jq -r '.{{.ID}}_local.chain_id' network.json
+    ignore_error: true  
     cmds:
       - docker kill {{.CHAIN_ID}}
   
@@ -361,7 +392,8 @@ tasks:
         sh: jq -r '.{{.ID}}_local.chain_id' network.json
       BINARY:
         sh: jq -r '.{{.ID}}_local.binary' network.json
-      CHAIN_DIR: "./data/{{.CHAIN_ID}}"
+      CHAIN_DIR:
+        sh: jq -r '.{{.ID}}_local.chain_dir' network.json
     cmds:
       - docker restart {{.CHAIN_ID}}
       - docker exec -d {{.CHAIN_ID}} {{.BINARY}} start --home "{{.CHAIN_DIR}}"

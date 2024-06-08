@@ -34,14 +34,28 @@ Overall, consumers get better prices, and merchants benefit with consistent marg
 
 #### Local chains
 
-You'll need to create the chains once with `task create-chains`
+1. Create docker images for chains:
+   - Neutron: 
+      - clone [https://github.com/neutron-org/neutron](https://github.com/neutron-org/neutron)
+      - `docker buildx build --load --build-context app=. -t local-neutron --build-arg BINARY=neutrond .`
+   - Kujira
+      - clone [https://github.com/Team-Kujira/pond-images](https://github.com/Team-Kujira/pond-images)
+      - in `kujira/` subdirectory: `docker build --build-arg go_version=1.21.3 --build-arg kujira_version=03985a2 -t local-kujira .`
+      - the exact go and kujira versions are taken from https://github.com/Team-Kujira/pond-images/blob/main/versions.yml
+   - Stargaze
+      - clone [https://github.com/public-awesome/stargaze](https://github.com/public-awesome/stargaze)
+      - `docker build -t local-stargaze .`
+2. Create containers for chains: `task create-chains`
+3. Start chains: `task start-chains`
 
-Then you can start and stop the local chains as-needed with `task start-chains` / `task stop-chains`
+Then you can stop and start the local chains as-needed with `task stop-chains` / `task start-chains`
 
-Debugging individual chains by shell can be done via `task sh-chain-[neutron|kujira|stargaze]`. The config is in a subdirectory of `./data`
+Debugging individual chains by shell can be done via `task sh-chain-[neutron|kujira|stargaze]`.
 
 
-#### Easy Mode
+#### High-Level / easy setup 
+
+If targeting locally, make sure you've started the local chains (see `Local Chains` above)
 
 If you already have all the depenencies, wallet setup, etc., then it's as easy as:
 
@@ -62,9 +76,11 @@ If you need a full redeployment (new addresses, wipe the state, etc.):
 3. `task relayer-create-channels-[local|testnet]`
 4. Restart the "live working environment" as above
 
-#### Detailed Mode
+#### Low-level / granular setup setup 
 
 Step-by-step instructions to allow for debugging individual commands etc.
+
+If targeting locally, make sure you've started the local chains (see `Local Chains` above)
 
 1. (one-time) make sure you have all the testnets installed available in Keplr
    - Neutron: https://neutron.celat.one/pion-1 and hit "connect wallet"

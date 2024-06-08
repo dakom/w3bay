@@ -4,7 +4,7 @@
       "key": "default",
       "chain-id": "local-kujira",
       "rpc-addr": "http://localhost:36659",
-      "account-prefix": "wasm",
+      "account-prefix": "kujira",
       "keyring-backend": "test",
       "gas-adjustment": 2.0,
       "gas-prices": "0.025ukuji",
