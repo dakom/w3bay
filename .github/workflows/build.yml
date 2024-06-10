@@ -40,8 +40,8 @@ jobs:
     - name: build for release 
       run: task frontend-build 
 
-    - name: patch the index files 
-      run: cd frontend && node ./github-deploy-patch.js
+    - name: copy for 404
+      run: cp ./frontend/dist/index.html ./frontend/dist/404.html
 
     - name: cargo doc
       run: cd packages/shared && cargo doc --no-deps
